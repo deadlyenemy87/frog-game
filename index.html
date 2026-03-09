@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-
 <title>Frog Bug Hunter</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -9,66 +8,85 @@
 <style>
 
 body{
-text-align:center;
-background:#bfe7a1;
-font-family:Arial;
 margin:0;
+font-family:Arial;
+text-align:center;
+background:#1f6f3f;
+color:white;
 }
 
 canvas{
-background:#e8f9ff;
-border:3px solid black;
+background:#7ec850;
+border:4px solid #0b3d1d;
 max-width:95%;
 height:auto;
+margin-top:10px;
 }
 
 #controls{
-margin-top:25px;
-
+margin-top:20px;
 display:grid;
-grid-template-columns: 100px 100px 100px;
-grid-template-rows: auto auto auto;
-gap:20px;
+grid-template-columns:110px 110px 110px;
+grid-template-rows:auto auto auto;
+gap:22px;
+justify-content:center;
+}
 
+button{
+font-size:34px;
+width:100px;
+height:100px;
+border:none;
+border-radius:18px;
+background:#2ecc71;
+color:white;
+}
+
+button:active{
+background:#1e9e54;
+}
+
+#tongue{
+background:#ff4d4d;
+}
+
+#up{grid-column:2;}
+#left{grid-column:1;}
+#tongue{grid-column:2;}
+#right{grid-column:3;}
+#down{grid-column:2;}
+
+#menu{
+position:absolute;
+top:0;
+left:0;
+right:0;
+bottom:0;
+background:rgba(0,0,0,0.75);
+display:flex;
+flex-direction:column;
 justify-content:center;
 align-items:center;
 }
 
-button{
-
-font-size:32px;
-padding:20px;
-border-radius:15px;
-border:none;
-
-background:#4CAF50;
-color:white;
-
-width:90px;
-height:90px;
-
-touch-action:manipulation;
-
+#menu button{
+width:200px;
+height:60px;
+font-size:24px;
+margin-top:20px;
 }
-
-button:active{
-background:#2e7d32;
-}
-
-#up{ grid-column:2; grid-row:1; }
-#left{ grid-column:1; grid-row:2; }
-#tongue{ grid-column:2; grid-row:2; background:#ff4d4d; }
-#right{ grid-column:3; grid-row:2; }
-#down{ grid-column:2; grid-row:3; }
 
 </style>
-
 </head>
 
 <body>
 
 <h1>🐸 Frog Bug Hunter</h1>
-<p>Arrow keys or touch controls • Tap tongue to catch bugs</p>
+
+<div id="menu">
+<h2 id="menuTitle">Catch Bugs With Your Frog!</h2>
+<button onclick="startGame()">Start Game</button>
+</div>
 
 <canvas id="game" width="600" height="400"></canvas>
 
@@ -87,26 +105,38 @@ background:#2e7d32;
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-let level = 1;
-let score = 0;
-let timeLeft = 30;
-let bugsNeeded = 5;
+let gameRunning=false;
+
+let level=1;
+let score=0;
+let bugsNeeded=5;
+let timeLeft=30;
 
 let highScore = localStorage.getItem("frogHighScore") || 0;
 
-let frog = {
+let frog={
 x:300,
 y:200,
 size:25,
+jump:0,
 tongueLength:0,
 tongueActive:false
 };
 
-let bugs = [];
+let bugs=[];
+
+function playBeep(freq){
+let ctxAudio=new AudioContext();
+let osc=ctxAudio.createOscillator();
+osc.frequency.value=freq;
+osc.connect(ctxAudio.destination);
+osc.start();
+osc.stop(ctxAudio.currentTime+0.1);
+}
 
 function spawnBugs(){
 
-bugs = [];
+bugs=[];
 
 for(let i=0;i<bugsNeeded;i++){
 
@@ -114,7 +144,7 @@ bugs.push({
 x:Math.random()*560+20,
 y:Math.random()*360+20,
 speed:1+level*0.4,
-type:Math.floor(Math.random()*3)
+wing:0
 });
 
 }
@@ -123,22 +153,16 @@ type:Math.floor(Math.random()*3)
 
 function drawBackground(){
 
-ctx.fillStyle="#7ec850";
+ctx.fillStyle="#6dbf4b";
 ctx.fillRect(0,0,canvas.width,canvas.height);
 
 for(let i=0;i<6;i++){
 
-ctx.fillStyle="#3fa34d";
-
+ctx.fillStyle="#3a8f3f";
 ctx.beginPath();
-ctx.arc(
-Math.random()*canvas.width,
+ctx.arc(Math.random()*canvas.width,
 Math.random()*canvas.height,
-30,
-0,
-Math.PI*2
-);
-
+30,0,Math.PI*2);
 ctx.fill();
 
 }
@@ -147,27 +171,29 @@ ctx.fill();
 
 function drawFrog(){
 
+frog.jump=Math.sin(Date.now()*0.01)*3;
+
 ctx.fillStyle="green";
 
 ctx.beginPath();
-ctx.arc(frog.x,frog.y,frog.size,0,Math.PI*2);
+ctx.arc(frog.x,frog.y+frog.jump,frog.size,0,Math.PI*2);
 ctx.fill();
 
-ctx.fillRect(frog.x-18,frog.y+15,10,15);
-ctx.fillRect(frog.x+8,frog.y+15,10,15);
+ctx.fillRect(frog.x-18,frog.y+15+frog.jump,10,15);
+ctx.fillRect(frog.x+8,frog.y+15+frog.jump,10,15);
 
 ctx.fillStyle="white";
 
 ctx.beginPath();
-ctx.arc(frog.x-10,frog.y-15,8,0,Math.PI*2);
-ctx.arc(frog.x+10,frog.y-15,8,0,Math.PI*2);
+ctx.arc(frog.x-10,frog.y-15+frog.jump,8,0,Math.PI*2);
+ctx.arc(frog.x+10,frog.y-15+frog.jump,8,0,Math.PI*2);
 ctx.fill();
 
 ctx.fillStyle="black";
 
 ctx.beginPath();
-ctx.arc(frog.x-10,frog.y-15,3,0,Math.PI*2);
-ctx.arc(frog.x+10,frog.y-15,3,0,Math.PI*2);
+ctx.arc(frog.x-10,frog.y-15+frog.jump,3,0,Math.PI*2);
+ctx.arc(frog.x+10,frog.y-15+frog.jump,3,0,Math.PI*2);
 ctx.fill();
 
 if(frog.tongueActive){
@@ -182,7 +208,7 @@ ctx.stroke();
 
 frog.tongueLength+=6;
 
-if(frog.tongueLength>80){
+if(frog.tongueLength>90){
 frog.tongueActive=false;
 frog.tongueLength=0;
 }
@@ -193,24 +219,20 @@ frog.tongueLength=0;
 
 function drawBug(bug){
 
-if(bug.type===0){
+bug.wing+=0.3;
+
 ctx.fillStyle="black";
-ctx.beginPath();
-ctx.arc(bug.x,bug.y,6,0,Math.PI*2);
-ctx.fill();
-}
 
-if(bug.type===1){
-ctx.fillStyle="brown";
-ctx.fillRect(bug.x-5,bug.y-3,10,6);
-}
-
-if(bug.type===2){
-ctx.fillStyle="purple";
 ctx.beginPath();
 ctx.arc(bug.x,bug.y,5,0,Math.PI*2);
 ctx.fill();
-}
+
+ctx.strokeStyle="white";
+
+ctx.beginPath();
+ctx.moveTo(bug.x,bug.y);
+ctx.lineTo(bug.x+Math.sin(bug.wing)*10,bug.y-6);
+ctx.stroke();
 
 }
 
@@ -218,8 +240,8 @@ function updateBugs(){
 
 bugs.forEach(bug=>{
 
-bug.x += Math.sin(Date.now()*0.005)*bug.speed;
-bug.y += Math.cos(Date.now()*0.005)*bug.speed;
+bug.x+=Math.sin(Date.now()*0.004)*bug.speed;
+bug.y+=Math.cos(Date.now()*0.004)*bug.speed;
 
 bug.x=Math.max(10,Math.min(canvas.width-10,bug.x));
 bug.y=Math.max(10,Math.min(canvas.height-10,bug.y));
@@ -234,18 +256,19 @@ if(!frog.tongueActive) return;
 
 bugs = bugs.filter(bug=>{
 
-let dx = frog.x - bug.x;
-let dy = (frog.y - frog.tongueLength) - bug.y;
+let dx=frog.x-bug.x;
+let dy=(frog.y-frog.tongueLength)-bug.y;
 
-let dist = Math.sqrt(dx*dx + dy*dy);
+let dist=Math.sqrt(dx*dx+dy*dy);
 
-if(dist < 20){
+if(dist<20){
 
 score++;
+playBeep(700);
 
-if(score > highScore){
-highScore = score;
-localStorage.setItem("frogHighScore", highScore);
+if(score>highScore){
+highScore=score;
+localStorage.setItem("frogHighScore",highScore);
 }
 
 return false;
@@ -272,28 +295,44 @@ ctx.fillText("High Score: "+highScore,10,80);
 
 function nextLevel(){
 
-if(level>=20){
-alert("You beat all 20 levels! 🐸");
+level++;
+bugsNeeded++;
+timeLeft=30;
+
+playBeep(500);
+
+spawnBugs();
+
+}
+
+function startGame(){
+
+document.getElementById("menu").style.display="none";
+
 level=1;
 score=0;
-}
-
-level++;
+bugsNeeded=5;
 timeLeft=30;
-bugsNeeded++;
 
 spawnBugs();
+gameRunning=true;
 
 }
 
-function startLevel(){
+function gameOver(){
 
-timeLeft=30;
-spawnBugs();
+gameRunning=false;
+
+document.getElementById("menuTitle").innerText=
+"Game Over! Score: "+score;
+
+document.getElementById("menu").style.display="flex";
 
 }
 
 setInterval(()=>{
+
+if(!gameRunning) return;
 
 timeLeft--;
 
@@ -303,10 +342,7 @@ if(score>=bugsNeeded){
 nextLevel();
 }
 else{
-alert("Game Over!");
-level=1;
-score=0;
-startLevel();
+gameOver();
 }
 
 }
@@ -337,14 +373,15 @@ requestAnimationFrame(gameLoop);
 
 document.addEventListener("keydown",e=>{
 
-if(e.key==="ArrowUp") frog.y-=20;
-if(e.key==="ArrowDown") frog.y+=20;
-if(e.key==="ArrowLeft") frog.x-=20;
-if(e.key==="ArrowRight") frog.x+=20;
+if(e.key==="ArrowUp") frog.y-=25;
+if(e.key==="ArrowDown") frog.y+=25;
+if(e.key==="ArrowLeft") frog.x-=25;
+if(e.key==="ArrowRight") frog.x+=25;
 
 if(e.key===" "){
 frog.tongueActive=true;
 frog.tongueLength=0;
+playBeep(300);
 }
 
 });
@@ -355,11 +392,13 @@ document.getElementById("left").ontouchstart=()=>frog.x-=30;
 document.getElementById("right").ontouchstart=()=>frog.x+=30;
 
 document.getElementById("tongue").ontouchstart=()=>{
+
 frog.tongueActive=true;
 frog.tongueLength=0;
+playBeep(300);
+
 };
 
-startLevel();
 gameLoop();
 
 </script>
