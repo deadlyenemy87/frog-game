@@ -4,16 +4,17 @@
 
 <title>Frog Bug Hunter</title>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 <style>
 
 body{
 margin:0;
 font-family:Arial;
-text-align:center;
-background:#063d2c;
+background:#063d1e;
 color:white;
+text-align:center;
+touch-action:none;
 overflow:hidden;
 }
 
@@ -21,74 +22,83 @@ h1{
 margin-top:10px;
 }
 
-canvas{
-background:#7ec850;
-border:4px solid #0b3d1d;
-display:block;
+#gameContainer{
+position:relative;
+max-width:700px;
 margin:auto;
 }
 
-#menu{
-position:fixed;
+canvas{
+background:#2e5d1a;
+border:5px solid black;
+width:100%;
+height:auto;
+}
+
+#hud{
+position:absolute;
+top:10px;
+left:10px;
+font-size:18px;
+text-align:left;
+}
+
+#startScreen{
+position:absolute;
 top:0;
 left:0;
 width:100%;
 height:100%;
-background:rgba(0,0,0,0.7);
+background:rgba(0,0,0,0.85);
 display:flex;
 flex-direction:column;
 justify-content:center;
 align-items:center;
-z-index:10;
+padding:20px;
+box-sizing:border-box;
 }
 
-#menu button{
+#startBtn{
 font-size:26px;
 padding:15px 40px;
+margin-top:20px;
 border:none;
 border-radius:12px;
-background:#ff4747;
+background:#4CAF50;
 color:white;
-margin-top:20px;
 }
 
-#controls{
+#joystick{
 position:fixed;
-bottom:20px;
-left:0;
-right:0;
-display:flex;
-justify-content:center;
-align-items:center;
-gap:50px;
+bottom:30px;
+left:30px;
+width:120px;
+height:120px;
+background:rgba(0,255,0,0.35);
+border-radius:50%;
 }
 
-#joystickBase{
-width:140px;
-height:140px;
-background:#2ecc71;
-border-radius:50%;
-position:relative;
-}
-
-#joystickKnob{
-width:60px;
-height:60px;
-background:#145a32;
-border-radius:50%;
+#stick{
 position:absolute;
-left:40px;
-top:40px;
+width:50px;
+height:50px;
+background:#0a5a2f;
+border-radius:50%;
+top:35px;
+left:35px;
 }
 
-#tongue{
-width:100px;
-height:100px;
-font-size:30px;
-border:none;
+#tongueBtn{
+position:fixed;
+bottom:40px;
+right:40px;
+width:90px;
+height:90px;
 border-radius:20px;
-background:#b22222;
+background:#b71c1c;
+font-size:40px;
 color:white;
+border:none;
 }
 
 </style>
@@ -98,352 +108,342 @@ color:white;
 
 <h1>🐸 Frog Bug Hunter</h1>
 
-<div id="menu">
-<h2>Catch the Bugs!</h2>
-<button onclick="startGame()">Start Game</button>
+<div id="gameContainer">
+
+<div id="hud">
+Level: <span id="level">1</span><br>
+Score: <span id="score">0</span><br>
+Time: <span id="time">30</span>
 </div>
 
-<canvas id="game" width="700" height="420"></canvas>
+<canvas id="game" width="700" height="450"></canvas>
 
-<div id="controls">
+<div id="startScreen">
 
-<div id="joystickBase">
-<div id="joystickKnob"></div>
+<h2>How To Play</h2>
+
+<p>
+Move the frog using the joystick or keyboard arrows.<br><br>
+Tap 👅 or press SPACE to shoot the tongue.<br><br>
+Catch all bugs before time runs out.<br><br>
+Boss bugs appear every 3 levels.<br><br>
+Levels 16-20 are extremely fast.
+</p>
+
+<button id="startBtn">Start Game</button>
+
 </div>
 
-<button id="tongue">👅</button>
-
 </div>
+
+<div id="joystick">
+<div id="stick"></div>
+</div>
+
+<button id="tongueBtn">👅</button>
 
 <script>
 
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
-
-let gameRunning=false;
-let level=1;
-let score=0;
-let bugsNeeded=5;
-let timeLeft=30;
+const canvas=document.getElementById("game")
+const ctx=canvas.getContext("2d")
 
 let frog={
 x:350,
-y:200,
-angle:0,
+y:225,
+size:25,
 tongueLength:0,
+tongueMax:120,
 tongueActive:false
-};
+}
 
-let bugs=[];
+let bugs=[]
+let keys={}
+let score=0
+let level=1
+let timeLeft=30
+let gameRunning=false
 
-function spawnBugs(){
+function spawnBug(){
 
-bugs=[];
-
-let count = level % 3 === 0 ? 1 : bugsNeeded;
-
-for(let i=0;i<count;i++){
+let speed=1+level*0.4
+if(level>15) speed*=2.5
 
 bugs.push({
-x:Math.random()*660+20,
-y:Math.random()*380+20,
-size: level % 3 === 0 ? 16 : 8,
-speed:1+level*0.3
-});
+x:Math.random()*650,
+y:Math.random()*400,
+vx:(Math.random()-0.5)*speed,
+vy:(Math.random()-0.5)*speed,
+size:10
+})
 
 }
 
+function spawnBoss(){
+
+bugs.push({
+x:Math.random()*650,
+y:Math.random()*400,
+vx:(Math.random()-0.5)*2,
+vy:(Math.random()-0.5)*2,
+size:22,
+boss:true
+})
+
 }
 
-function drawBackground(){
+function startLevel(){
 
-ctx.fillStyle="#7ec850";
-ctx.fillRect(0,0,canvas.width,canvas.height);
+bugs=[]
+
+let count=3+level
+
+for(let i=0;i<count;i++) spawnBug()
+
+if(level%3==0) spawnBoss()
+
+timeLeft=30
+
+document.getElementById("level").innerText=level
 
 }
 
 function drawFrog(){
 
-ctx.save();
+ctx.fillStyle="#1fa34a"
 
-ctx.translate(frog.x,frog.y);
-ctx.rotate(frog.angle);
+ctx.beginPath()
+ctx.arc(frog.x,frog.y,frog.size,0,Math.PI*2)
+ctx.fill()
 
-ctx.fillStyle="green";
+// legs
+ctx.strokeStyle="#145c2e"
+ctx.lineWidth=6
 
-ctx.beginPath();
-ctx.arc(0,0,25,0,Math.PI*2);
-ctx.fill();
+ctx.beginPath()
+ctx.moveTo(frog.x-20,frog.y+10)
+ctx.lineTo(frog.x-35,frog.y+25)
 
-ctx.fillRect(-20,15,12,18);
-ctx.fillRect(8,15,12,18);
+ctx.moveTo(frog.x+20,frog.y+10)
+ctx.lineTo(frog.x+35,frog.y+25)
+ctx.stroke()
 
-ctx.fillStyle="white";
+// eyes
+ctx.fillStyle="white"
 
-ctx.beginPath();
-ctx.arc(-10,-15,8,0,Math.PI*2);
-ctx.arc(10,-15,8,0,Math.PI*2);
-ctx.fill();
+ctx.beginPath()
+ctx.arc(frog.x-10,frog.y-20,8,0,Math.PI*2)
+ctx.arc(frog.x+10,frog.y-20,8,0,Math.PI*2)
+ctx.fill()
 
-ctx.fillStyle="black";
+ctx.fillStyle="black"
 
-ctx.beginPath();
-ctx.arc(-10,-15,3,0,Math.PI*2);
-ctx.arc(10,-15,3,0,Math.PI*2);
-ctx.fill();
+ctx.beginPath()
+ctx.arc(frog.x-10,frog.y-20,3,0,Math.PI*2)
+ctx.arc(frog.x+10,frog.y-20,3,0,Math.PI*2)
+ctx.fill()
 
+// tongue
 if(frog.tongueActive){
 
-ctx.strokeStyle="red";
-ctx.lineWidth=4;
+ctx.strokeStyle="red"
+ctx.lineWidth=6
 
-ctx.beginPath();
-ctx.moveTo(0,0);
-ctx.lineTo(0,-frog.tongueLength);
-ctx.stroke();
+ctx.beginPath()
+ctx.moveTo(frog.x,frog.y)
+ctx.lineTo(frog.x,frog.y-frog.tongueLength)
+ctx.stroke()
 
-frog.tongueLength+=7;
-
-if(frog.tongueLength>110){
-frog.tongueActive=false;
-frog.tongueLength=0;
 }
 
 }
 
-ctx.restore();
+function drawBug(b){
+
+ctx.fillStyle=b.boss?"red":"black"
+
+ctx.beginPath()
+ctx.arc(b.x,b.y,b.size,0,Math.PI*2)
+ctx.fill()
+
+// wings
+ctx.strokeStyle="white"
+
+ctx.beginPath()
+ctx.moveTo(b.x-6,b.y-6)
+ctx.lineTo(b.x-14,b.y-14)
+
+ctx.moveTo(b.x+6,b.y-6)
+ctx.lineTo(b.x+14,b.y-14)
+
+ctx.stroke()
 
 }
 
-function drawBug(bug){
+function update(){
 
-ctx.fillStyle="black";
+if(!gameRunning) return
 
-ctx.beginPath();
-ctx.arc(bug.x,bug.y,bug.size,0,Math.PI*2);
-ctx.fill();
+if(keys["ArrowUp"]) frog.y-=4
+if(keys["ArrowDown"]) frog.y+=4
+if(keys["ArrowLeft"]) frog.x-=4
+if(keys["ArrowRight"]) frog.x+=4
 
-ctx.strokeStyle="white";
+bugs.forEach(b=>{
 
-ctx.beginPath();
-ctx.moveTo(bug.x,bug.y);
-ctx.lineTo(bug.x+10,bug.y-6);
-ctx.stroke();
+b.x+=b.vx
+b.y+=b.vy
 
-ctx.beginPath();
-ctx.moveTo(bug.x,bug.y);
-ctx.lineTo(bug.x-10,bug.y-6);
-ctx.stroke();
+if(b.x<0||b.x>700) b.vx*=-1
+if(b.y<0||b.y>450) b.vy*=-1
 
-}
+})
 
-function updateBugs(){
+// tongue mechanics
+if(frog.tongueActive){
 
-bugs.forEach(bug=>{
+frog.tongueLength+=12
 
-if(level>=16){
+bugs.forEach((b,i)=>{
 
-bug.x += (Math.random()-0.5)*bug.speed*6;
-bug.y += (Math.random()-0.5)*bug.speed*6;
+let dx=b.x-frog.x
+let dy=b.y-frog.y
+let dist=Math.sqrt(dx*dx+dy*dy)
 
-}else{
+if(dist < frog.tongueLength){
 
-bug.x += Math.sin(Date.now()*0.003)*bug.speed;
-bug.y += Math.cos(Date.now()*0.003)*bug.speed;
+score+=b.boss?5:1
+bugs.splice(i,1)
 
-}
-
-});
+document.getElementById("score").innerText=score
 
 }
 
-function rotateFrog(){
+})
 
-if(bugs.length===0)return;
-
-let t=bugs[0];
-
-let dx=t.x-frog.x;
-let dy=t.y-frog.y;
-
-frog.angle=Math.atan2(dy,dx)+Math.PI/2;
+if(frog.tongueLength>frog.tongueMax){
+frog.tongueActive=false
+}
 
 }
 
-function checkCatch(){
+if(bugs.length==0){
 
-if(!frog.tongueActive)return;
+level++
 
-bugs=bugs.filter(b=>{
+if(level>20){
 
-let dx=frog.x-b.x;
-let dy=frog.y-b.y;
+alert("You beat the game!")
 
-if(Math.sqrt(dx*dx+dy*dy)<30){
-
-score++;
-return false;
+level=1
+score=0
 
 }
 
-return true;
-
-});
+startLevel()
 
 }
 
-function drawHUD(){
+}
 
-ctx.fillStyle="black";
-ctx.font="18px Arial";
+function draw(){
 
-ctx.fillText("Level: "+level,10,20);
-ctx.fillText("Score: "+score,10,40);
-ctx.fillText("Time: "+timeLeft,10,60);
+ctx.clearRect(0,0,700,450)
+
+drawFrog()
+
+bugs.forEach(drawBug)
 
 }
 
-function nextLevel(){
+function loop(){
 
-if(level>=20){
+update()
+draw()
 
-gameOver("You beat all 20 levels!");
-
-return;
-
-}
-
-level++;
-bugsNeeded++;
-timeLeft=30;
-
-spawnBugs();
+requestAnimationFrame(loop)
 
 }
 
-function startGame(){
+loop()
 
-document.getElementById("menu").style.display="none";
+document.addEventListener("keydown",e=>{
+keys[e.key]=true
 
-level=1;
-score=0;
-bugsNeeded=5;
-timeLeft=30;
+if(e.code==="Space") shootTongue()
+})
 
-spawnBugs();
+document.addEventListener("keyup",e=>{
+keys[e.key]=false
+})
 
-gameRunning=true;
+function shootTongue(){
 
-}
+if(frog.tongueActive) return
 
-function gameOver(msg){
-
-gameRunning=false;
-
-document.getElementById("menu").style.display="flex";
-document.querySelector("#menu h2").innerText=msg+" Score:"+score;
+frog.tongueActive=true
+frog.tongueLength=0
 
 }
+
+document.getElementById("tongueBtn").onclick=shootTongue
 
 setInterval(()=>{
 
-if(!gameRunning)return;
+if(!gameRunning) return
 
-timeLeft--;
+timeLeft--
+
+document.getElementById("time").innerText=timeLeft
 
 if(timeLeft<=0){
 
-if(score>=bugsNeeded){
-nextLevel();
-}else{
-gameOver("Game Over!");
-}
+alert("Time's up!")
+
+level=1
+score=0
+
+startLevel()
 
 }
 
-},1000);
+},1000)
 
-function gameLoop(){
+document.getElementById("startBtn").onclick=()=>{
 
-drawBackground();
-rotateFrog();
-updateBugs();
-drawFrog();
+document.getElementById("startScreen").style.display="none"
 
-bugs.forEach(drawBug);
+gameRunning=true
 
-checkCatch();
-drawHUD();
-
-if(bugs.length===0)nextLevel();
-
-requestAnimationFrame(gameLoop);
+startLevel()
 
 }
 
-gameLoop();
+// joystick control
 
-let knob=document.getElementById("joystickKnob");
-let base=document.getElementById("joystickBase");
+let joystick=document.getElementById("joystick")
+let stick=document.getElementById("stick")
 
-let joy=false;
+joystick.addEventListener("touchmove",e=>{
 
-base.addEventListener("touchstart",()=>{joy=true});
+let rect=joystick.getBoundingClientRect()
 
-base.addEventListener("touchend",()=>{
+let x=e.touches[0].clientX-rect.left-60
+let y=e.touches[0].clientY-rect.top-60
 
-joy=false;
-knob.style.left="40px";
-knob.style.top="40px";
+stick.style.left=(x+35)+"px"
+stick.style.top=(y+35)+"px"
 
-});
+frog.x+=x*0.03
+frog.y+=y*0.03
 
-base.addEventListener("touchmove",(e)=>{
+})
 
-if(!joy)return;
+joystick.addEventListener("touchend",()=>{
 
-let rect=base.getBoundingClientRect();
+stick.style.left="35px"
+stick.style.top="35px"
 
-let x=e.touches[0].clientX-rect.left-70;
-let y=e.touches[0].clientY-rect.top-70;
-
-let dist=Math.sqrt(x*x+y*y);
-
-if(dist>50){
-x=x/dist*50;
-y=y/dist*50;
-}
-
-knob.style.left=(x+40)+"px";
-knob.style.top=(y+40)+"px";
-
-frog.x+=x*0.1;
-frog.y+=y*0.1;
-
-});
-
-document.getElementById("tongue").onclick=()=>{
-
-frog.tongueActive=true;
-frog.tongueLength=0;
-
-};
-
-document.addEventListener("keydown",(e)=>{
-
-if(e.key==="ArrowUp")frog.y-=15;
-if(e.key==="ArrowDown")frog.y+=15;
-if(e.key==="ArrowLeft")frog.x-=15;
-if(e.key==="ArrowRight")frog.x+=15;
-
-if(e.key===" "){
-
-frog.tongueActive=true;
-frog.tongueLength=0;
-
-}
-
-});
+})
 
 </script>
 
