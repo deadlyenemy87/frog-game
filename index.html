@@ -4,7 +4,7 @@
 
 <title>Frog Bug Hunter</title>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
 
@@ -35,7 +35,6 @@ gap:40px;
 #joystickArea{
 width:160px;
 height:160px;
-position:relative;
 }
 
 #joystickBase{
@@ -54,7 +53,6 @@ border-radius:50%;
 position:absolute;
 left:45px;
 top:45px;
-touch-action:none;
 }
 
 button{
@@ -138,16 +136,13 @@ function spawnBugs(){
 
 bugs=[];
 
-let bossLevel = level % 3 === 0;
-
-if(bossLevel){
+if(level % 3 === 0){
 
 bugs.push({
 x:Math.random()*560+20,
 y:Math.random()*360+20,
 speed:1+level*0.3,
-size:18,
-boss:true
+size:18
 });
 
 }else{
@@ -158,8 +153,7 @@ bugs.push({
 x:Math.random()*560+20,
 y:Math.random()*360+20,
 speed:1+level*0.4,
-size:8,
-boss:false
+size:8
 });
 
 }
@@ -169,16 +163,13 @@ boss:false
 }
 
 function drawBackground(){
-
 ctx.fillStyle="#7ec850";
 ctx.fillRect(0,0,canvas.width,canvas.height);
-
 }
 
 function drawFrog(){
 
 ctx.save();
-
 ctx.translate(frog.x,frog.y);
 ctx.rotate(frog.angle);
 
@@ -226,7 +217,7 @@ ctx.restore();
 
 function drawBug(bug){
 
-ctx.fillStyle = bug.boss ? "red" : "black";
+ctx.fillStyle="black";
 
 ctx.beginPath();
 ctx.arc(bug.x,bug.y,bug.size,0,Math.PI*2);
@@ -269,12 +260,9 @@ let dy=frog.y-bug.y;
 
 let dist=Math.sqrt(dx*dx+dy*dy);
 
-if(dist<25){
-
+if(dist<30){
 score++;
-
 return false;
-
 }
 
 return true;
@@ -379,58 +367,58 @@ requestAnimationFrame(gameLoop);
 
 }
 
-const knob = document.getElementById("joystickKnob");
-const base = document.getElementById("joystickBase");
+gameLoop();
 
-let joystickActive=false;
+const knob=document.getElementById("joystickKnob");
+const base=document.getElementById("joystickBase");
 
-base.addEventListener("touchstart", ()=>{
+let joystick=false;
 
-joystickActive=true;
+base.addEventListener("touchstart",()=>{
+
+joystick=true;
 
 });
 
-base.addEventListener("touchend", ()=>{
+base.addEventListener("touchend",()=>{
 
-joystickActive=false;
+joystick=false;
 
 knob.style.left="45px";
 knob.style.top="45px";
 
 });
 
-base.addEventListener("touchmove", (e)=>{
+base.addEventListener("touchmove",(e)=>{
 
-if(!joystickActive) return;
+if(!joystick) return;
 
-let rect = base.getBoundingClientRect();
+let rect=base.getBoundingClientRect();
 
-let x = e.touches[0].clientX - rect.left - 80;
-let y = e.touches[0].clientY - rect.top - 80;
+let x=e.touches[0].clientX-rect.left-80;
+let y=e.touches[0].clientY-rect.top-80;
 
-let dist = Math.sqrt(x*x + y*y);
+let dist=Math.sqrt(x*x+y*y);
 
-if(dist > 60){
-x = x/dist*60;
-y = y/dist*60;
+if(dist>60){
+x=x/dist*60;
+y=y/dist*60;
 }
 
-knob.style.left = x + 80 - 35 + "px";
-knob.style.top = y + 80 - 35 + "px";
+knob.style.left=(x+45)+"px";
+knob.style.top=(y+45)+"px";
 
-frog.x += x*0.08;
-frog.y += y*0.08;
+frog.x+=x*0.08;
+frog.y+=y*0.08;
 
 });
 
-document.getElementById("tongue").ontouchstart=()=>{
+document.getElementById("tongue").addEventListener("touchstart",()=>{
 
 frog.tongueActive=true;
 frog.tongueLength=0;
 
-};
-
-gameLoop();
+});
 
 </script>
 
