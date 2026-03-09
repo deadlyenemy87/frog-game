@@ -2,7 +2,7 @@
 <html>
 <head>
 <title>Frog Bug Hunter</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body{
 text-align:center;
@@ -14,7 +14,23 @@ canvas{
 background:#e8f9ff;
 border:3px solid black;
 }
-</style>
+</style #controls{
+margin-top:15px;
+}
+
+button{
+font-size:24px;
+padding:12px 18px;
+margin:5px;
+border-radius:10px;
+border:none;
+background:#4CAF50;
+color:white;
+}
+
+button:active{
+background:#2e7d32;
+}>
 
 </head>
 
@@ -30,7 +46,19 @@ Time: <span id="time">20</span>
 </p>
 
 <canvas id="game" width="600" height="400"></canvas>
+<div id="controls">
 
+<button id="up">⬆️</button>
+
+<div>
+<button id="left">⬅️</button>
+<button id="tongue">👅</button>
+<button id="right">➡️</button>
+</div>
+
+<button id="down">⬇️</button>
+
+</div>
 <script>
 
 const canvas = document.getElementById("game");
@@ -272,6 +300,15 @@ startLevel();
 gameLoop();
 
 </script>
+document.getElementById("up").ontouchstart = () => frog.y -= 30;
+document.getElementById("down").ontouchstart = () => frog.y += 30;
+document.getElementById("left").ontouchstart = () => frog.x -= 30;
+document.getElementById("right").ontouchstart = () => frog.x += 30;
 
+document.getElementById("tongue").ontouchstart = () => {
+frog.tongueActive = true;
+frog.tongueLength = 0;
+};
 </body>
 </html>
+
