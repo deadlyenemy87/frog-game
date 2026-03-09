@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <title>Frog Bug Hunter</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
 
@@ -9,30 +12,54 @@ body{
 text-align:center;
 background:#bfe7a1;
 font-family:Arial;
+margin:0;
 }
 
 canvas{
 background:#e8f9ff;
 border:3px solid black;
+max-width:95%;
+height:auto;
 }
 
 #controls{
-margin-top:15px;
+margin-top:25px;
+
+display:grid;
+grid-template-columns: 100px 100px 100px;
+grid-template-rows: auto auto auto;
+gap:20px;
+
+justify-content:center;
+align-items:center;
 }
 
 button{
-font-size:24px;
-padding:12px 18px;
-margin:5px;
-border-radius:10px;
+
+font-size:32px;
+padding:20px;
+border-radius:15px;
 border:none;
+
 background:#4CAF50;
 color:white;
+
+width:90px;
+height:90px;
+
+touch-action:manipulation;
+
 }
 
 button:active{
 background:#2e7d32;
 }
+
+#up{ grid-column:2; grid-row:1; }
+#left{ grid-column:1; grid-row:2; }
+#tongue{ grid-column:2; grid-row:2; background:#ff4d4d; }
+#right{ grid-column:3; grid-row:2; }
+#down{ grid-column:2; grid-row:3; }
 
 </style>
 
@@ -41,17 +68,16 @@ background:#2e7d32;
 <body>
 
 <h1>🐸 Frog Bug Hunter</h1>
-
-<p>Use arrow keys or touch buttons • Tap tongue to catch bugs</p>
+<p>Arrow keys or touch controls • Tap tongue to catch bugs</p>
 
 <canvas id="game" width="600" height="400"></canvas>
 
 <div id="controls">
 
-<button id="up">⬆</button><br>
+<button id="up">⬆</button>
 <button id="left">⬅</button>
 <button id="tongue">👅</button>
-<button id="right">➡</button><br>
+<button id="right">➡</button>
 <button id="down">⬇</button>
 
 </div>
@@ -65,6 +91,8 @@ let level = 1;
 let score = 0;
 let timeLeft = 30;
 let bugsNeeded = 5;
+
+let highScore = localStorage.getItem("frogHighScore") || 0;
 
 let frog = {
 x:300,
@@ -93,24 +121,50 @@ type:Math.floor(Math.random()*3)
 
 }
 
+function drawBackground(){
+
+ctx.fillStyle="#7ec850";
+ctx.fillRect(0,0,canvas.width,canvas.height);
+
+for(let i=0;i<6;i++){
+
+ctx.fillStyle="#3fa34d";
+
+ctx.beginPath();
+ctx.arc(
+Math.random()*canvas.width,
+Math.random()*canvas.height,
+30,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+
+}
+
+}
+
 function drawFrog(){
 
 ctx.fillStyle="green";
+
 ctx.beginPath();
 ctx.arc(frog.x,frog.y,frog.size,0,Math.PI*2);
 ctx.fill();
 
-ctx.fillStyle="green";
 ctx.fillRect(frog.x-18,frog.y+15,10,15);
 ctx.fillRect(frog.x+8,frog.y+15,10,15);
 
 ctx.fillStyle="white";
+
 ctx.beginPath();
 ctx.arc(frog.x-10,frog.y-15,8,0,Math.PI*2);
 ctx.arc(frog.x+10,frog.y-15,8,0,Math.PI*2);
 ctx.fill();
 
 ctx.fillStyle="black";
+
 ctx.beginPath();
 ctx.arc(frog.x-10,frog.y-15,3,0,Math.PI*2);
 ctx.arc(frog.x+10,frog.y-15,3,0,Math.PI*2);
@@ -140,31 +194,22 @@ frog.tongueLength=0;
 function drawBug(bug){
 
 if(bug.type===0){
-
 ctx.fillStyle="black";
-
 ctx.beginPath();
 ctx.arc(bug.x,bug.y,6,0,Math.PI*2);
 ctx.fill();
-
 }
 
 if(bug.type===1){
-
 ctx.fillStyle="brown";
-
 ctx.fillRect(bug.x-5,bug.y-3,10,6);
-
 }
 
 if(bug.type===2){
-
 ctx.fillStyle="purple";
-
 ctx.beginPath();
 ctx.arc(bug.x,bug.y,5,0,Math.PI*2);
 ctx.fill();
-
 }
 
 }
@@ -173,8 +218,8 @@ function updateBugs(){
 
 bugs.forEach(bug=>{
 
-bug.x+= (Math.random()-0.5)*bug.speed*2;
-bug.y+= (Math.random()-0.5)*bug.speed*2;
+bug.x += Math.sin(Date.now()*0.005)*bug.speed;
+bug.y += Math.cos(Date.now()*0.005)*bug.speed;
 
 bug.x=Math.max(10,Math.min(canvas.width-10,bug.x));
 bug.y=Math.max(10,Math.min(canvas.height-10,bug.y));
@@ -195,8 +240,16 @@ let dy = (frog.y - frog.tongueLength) - bug.y;
 let dist = Math.sqrt(dx*dx + dy*dy);
 
 if(dist < 20){
+
 score++;
+
+if(score > highScore){
+highScore = score;
+localStorage.setItem("frogHighScore", highScore);
+}
+
 return false;
+
 }
 
 return true;
@@ -213,6 +266,7 @@ ctx.font="18px Arial";
 ctx.fillText("Level: "+level,10,20);
 ctx.fillText("Score: "+score,10,40);
 ctx.fillText("Time: "+timeLeft,10,60);
+ctx.fillText("High Score: "+highScore,10,80);
 
 }
 
@@ -261,7 +315,7 @@ startLevel();
 
 function gameLoop(){
 
-ctx.clearRect(0,0,canvas.width,canvas.height);
+drawBackground();
 
 updateBugs();
 
@@ -301,10 +355,8 @@ document.getElementById("left").ontouchstart=()=>frog.x-=30;
 document.getElementById("right").ontouchstart=()=>frog.x+=30;
 
 document.getElementById("tongue").ontouchstart=()=>{
-
 frog.tongueActive=true;
 frog.tongueLength=0;
-
 };
 
 startLevel();
