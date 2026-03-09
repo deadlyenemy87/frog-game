@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Frog Bug Hunter</title>
+
+<style>
+body{
+text-align:center;
+background:#bfe7a1;
+font-family:Arial;
+}
+
+canvas{
+background:#e8f9ff;
+border:3px solid black;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>🐸 Frog Bug Hunter</h2>
+<p>Arrow keys to move • SPACEBAR to catch bugs with tongue</p>
+
+<p>
+Level: <span id="level">1</span> |
+Bugs Left: <span id="bugsLeft">0</span> |
+Time: <span id="time">20</span>
+</p>
+
+<canvas id="game" width="600" height="400"></canvas>
+
+<script>
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let frog = {
+x:300,
+y:200,
+size:25,
+speed:4,
+tongueLength:0,
+tongueMax:120,
+tongueActive:false
+};
+
+let bugs=[];
+let keys={};
+
+let level=1;
+let maxLevel=20;
+let timeLeft=20;
+
+document.addEventListener("keydown",e=>{
+keys[e.key]=true;
+
+if(e.code==="Space"){
+frog.tongueActive=true;
+frog.tongueLength=0;
+}
+
+});
+
+document.addEventListener("keyup",e=>{
+keys[e.key]=false;
+});
+
+function spawnBug(){
+
+const types=["fly","beetle","mosquito"];
+
+let type=types[Math.floor(Math.random()*types.length)];
+
+bugs.push({
+
+x:Math.random()*580,
+y:Math.random()*380,
+
+vx:(Math.random()-0.5)*(1+level*0.3),
+vy:(Math.random()-0.5)*(1+level*0.3),
+
+type:type,
+size:10
+
+});
+
+}
+
+function startLevel(){
+
+bugs=[];
+
+let bugCount=3+level;
+
+for(let i=0;i<bugCount;i++) spawnBug();
+
+timeLeft=Math.max(8,20-level);
+
+document.getElementById("level").innerText=level;
+document.getElementById("bugsLeft").innerText=bugs.length;
+document.getElementById("time").innerText=timeLeft;
+
+}
+
+function update(){
+
+if(keys["ArrowUp"]) frog.y-=frog.speed;
+if(keys["ArrowDown"]) frog.y+=frog.speed;
+if(keys["ArrowLeft"]) frog.x-=frog.speed;
+if(keys["ArrowRight"]) frog.x+=frog.speed;
+
+bugs.forEach(b=>{
+
+b.x+=b.vx;
+b.y+=b.vy;
+
+if(b.x<0||b.x>600) b.vx*=-1;
+if(b.y<0||b.y>400) b.vy*=-1;
+
+});
+
+if(frog.tongueActive){
+
+frog.tongueLength+=12;
+
+bugs.forEach((b,i)=>{
+
+let dx=b.x-frog.x;
+let dy=b.y-frog.y;
+
+let dist=Math.sqrt(dx*dx+dy*dy);
+
+if(dist<frog.tongueLength){
+
+bugs.splice(i,1);
+document.getElementById("bugsLeft").innerText=bugs.length;
+
+}
+
+});
+
+if(frog.tongueLength>frog.tongueMax){
+frog.tongueActive=false;
+}
+
+}
+
+if(bugs.length===0){
+
+level++;
+
+if(level>maxLevel){
+
+alert("Frog is full! You beat all 20 levels 🐸");
+level=1;
+
+}
+
+startLevel();
+
+}
+
+}
+
+function drawFrog(){
+
+ctx.fillStyle="#2e8b57";
+
+ctx.beginPath();
+ctx.arc(frog.x,frog.y,frog.size,0,Math.PI*2);
+ctx.fill();
+
+ctx.fillStyle="white";
+
+ctx.beginPath();
+ctx.arc(frog.x-10,frog.y-18,8,0,Math.PI*2);
+ctx.arc(frog.x+10,frog.y-18,8,0,Math.PI*2);
+ctx.fill();
+
+ctx.fillStyle="black";
+
+ctx.beginPath();
+ctx.arc(frog.x-10,frog.y-18,3,0,Math.PI*2);
+ctx.arc(frog.x+10,frog.y-18,3,0,Math.PI*2);
+ctx.fill();
+
+ctx.strokeStyle="#1c5c36";
+ctx.lineWidth=4;
+
+ctx.beginPath();
+ctx.moveTo(frog.x-20,frog.y+10);
+ctx.lineTo(frog.x-35,frog.y+20);
+ctx.moveTo(frog.x+20,frog.y+10);
+ctx.lineTo(frog.x+35,frog.y+20);
+ctx.stroke();
+
+if(frog.tongueActive){
+
+ctx.strokeStyle="red";
+ctx.lineWidth=5;
+
+ctx.beginPath();
+ctx.moveTo(frog.x,frog.y);
+ctx.lineTo(frog.x,frog.y-frog.tongueLength);
+ctx.stroke();
+
+}
+
+}
+
+function drawBug(b){
+
+if(b.type==="fly") ctx.fillStyle="black";
+if(b.type==="beetle") ctx.fillStyle="brown";
+if(b.type==="mosquito") ctx.fillStyle="gray";
+
+ctx.beginPath();
+ctx.arc(b.x,b.y,b.size,0,Math.PI*2);
+ctx.fill();
+
+ctx.strokeStyle="white";
+
+ctx.beginPath();
+ctx.moveTo(b.x-6,b.y-6);
+ctx.lineTo(b.x-12,b.y-12);
+ctx.moveTo(b.x+6,b.y-6);
+ctx.lineTo(b.x+12,b.y-12);
+ctx.stroke();
+
+}
+
+function draw(){
+
+ctx.clearRect(0,0,600,400);
+
+drawFrog();
+
+bugs.forEach(drawBug);
+
+}
+
+function gameLoop(){
+
+update();
+draw();
+
+requestAnimationFrame(gameLoop);
+
+}
+
+setInterval(()=>{
+
+timeLeft--;
+
+document.getElementById("time").innerText=timeLeft;
+
+if(timeLeft<=0){
+
+alert("Time's up! Restarting.");
+
+level=1;
+
+startLevel();
+
+}
+
+},1000);
+
+startLevel();
+gameLoop();
+
+</script>
+
+</body>
+</html>
