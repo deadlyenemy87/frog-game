@@ -252,6 +252,34 @@ ctx.beginPath()
 ctx.arc(frog.x,frog.y,frog.size,0,Math.PI*2)
 ctx.fill()
 
+// eyes
+ctx.fillStyle="white"
+
+ctx.beginPath()
+ctx.arc(frog.x-10,frog.y-20,8,0,Math.PI*2)
+ctx.arc(frog.x+10,frog.y-20,8,0,Math.PI*2)
+ctx.fill()
+
+// pupils
+ctx.fillStyle="black"
+
+ctx.beginPath()
+ctx.arc(frog.x-10,frog.y-20,3,0,Math.PI*2)
+ctx.arc(frog.x+10,frog.y-20,3,0,Math.PI*2)
+ctx.fill()
+
+// legs
+ctx.strokeStyle="#145c2e"
+ctx.lineWidth=6
+
+ctx.beginPath()
+ctx.moveTo(frog.x-18,frog.y+10)
+ctx.lineTo(frog.x-35,frog.y+25)
+
+ctx.moveTo(frog.x+18,frog.y+10)
+ctx.lineTo(frog.x+35,frog.y+25)
+ctx.stroke()
+
 if(frog.tongueActive){
 
 ctx.strokeStyle="red"
@@ -273,6 +301,18 @@ ctx.fillStyle=b.boss?"darkred":"black"
 ctx.beginPath()
 ctx.arc(b.x,b.y,b.size,0,Math.PI*2)
 ctx.fill()
+
+// wings
+ctx.strokeStyle="white"
+ctx.lineWidth=2
+
+ctx.beginPath()
+ctx.moveTo(b.x-5,b.y-5)
+ctx.lineTo(b.x-12,b.y-12)
+
+ctx.moveTo(b.x+5,b.y-5)
+ctx.lineTo(b.x+12,b.y-12)
+ctx.stroke()
 
 }
 
