@@ -43,6 +43,18 @@ font-size:18px;
 text-align:left;
 }
 
+#pauseBtn{
+position:absolute;
+top:10px;
+right:10px;
+padding:6px 14px;
+font-size:16px;
+background:#222;
+color:white;
+border:none;
+border-radius:6px;
+}
+
 #startScreen{
 position:absolute;
 top:0;
@@ -116,6 +128,8 @@ Score: <span id="score">0</span><br>
 Time: <span id="time">30</span>
 </div>
 
+<button id="pauseBtn">Pause</button>
+
 <canvas id="game" width="700" height="450"></canvas>
 
 <div id="startScreen">
@@ -127,7 +141,7 @@ Move with joystick or keyboard arrows.<br><br>
 Tap 👅 or press SPACE to shoot tongue.<br><br>
 Catch all bugs before time runs out.<br><br>
 Boss bugs appear every 3 levels.<br><br>
-Levels 16-20 are extremely fast!
+Boss flies are VERY FAST.
 </p>
 
 <button id="startBtn">Start Game</button>
@@ -153,7 +167,7 @@ y:225,
 size:25,
 speed:5,
 tongueLength:0,
-tongueMax:120,
+tongueMax:140,
 tongueActive:false
 }
 
@@ -163,6 +177,7 @@ let score=0
 let level=1
 let timeLeft=30
 let gameRunning=false
+let paused=false
 
 function spawnBug(){
 
@@ -184,9 +199,9 @@ function spawnBoss(){
 bugs.push({
 x:Math.random()*650,
 y:Math.random()*400,
-vx:(Math.random()-0.5)*2,
-vy:(Math.random()-0.5)*2,
-size:22,
+vx:(Math.random()-0.5)*7,
+vy:(Math.random()-0.5)*7,
+size:32,
 boss:true
 })
 
@@ -244,7 +259,7 @@ ctx.fill()
 if(frog.tongueActive){
 
 ctx.strokeStyle="red"
-ctx.lineWidth=6
+ctx.lineWidth=8
 
 ctx.beginPath()
 ctx.moveTo(frog.x,frog.y)
@@ -257,32 +272,36 @@ ctx.stroke()
 
 function drawBug(b){
 
-ctx.fillStyle=b.boss?"red":"black"
+ctx.fillStyle=b.boss?"darkred":"black"
 
 ctx.beginPath()
 ctx.arc(b.x,b.y,b.size,0,Math.PI*2)
 ctx.fill()
 
 ctx.strokeStyle="white"
+ctx.lineWidth=b.boss?4:2
 
 ctx.beginPath()
 ctx.moveTo(b.x-6,b.y-6)
-ctx.lineTo(b.x-14,b.y-14)
+ctx.lineTo(b.x-16,b.y-16)
 
 ctx.moveTo(b.x+6,b.y-6)
-ctx.lineTo(b.x+14,b.y-14)
+ctx.lineTo(b.x+16,b.y-16)
 ctx.stroke()
 
 }
 
 function update(){
 
-if(!gameRunning) return
+if(!gameRunning || paused) return
 
 if(keys["ArrowUp"]) frog.y-=frog.speed
 if(keys["ArrowDown"]) frog.y+=frog.speed
 if(keys["ArrowLeft"]) frog.x-=frog.speed
 if(keys["ArrowRight"]) frog.x+=frog.speed
+
+frog.x=Math.max(25,Math.min(canvas.width-25,frog.x))
+frog.y=Math.max(25,Math.min(canvas.height-25,frog.y))
 
 bugs.forEach(b=>{
 
@@ -296,7 +315,7 @@ if(b.y<0||b.y>450) b.vy*=-1
 
 if(frog.tongueActive){
 
-frog.tongueLength+=12
+frog.tongueLength+=16
 
 bugs.forEach((b,i)=>{
 
@@ -383,7 +402,7 @@ document.getElementById("tongueBtn").onclick=shootTongue
 
 setInterval(()=>{
 
-if(!gameRunning) return
+if(!gameRunning || paused) return
 
 timeLeft--
 
@@ -391,7 +410,7 @@ document.getElementById("time").innerText=timeLeft
 
 if(timeLeft<=0){
 
-alert("Time's up!")
+alert("Game Over!")
 
 level=1
 score=0
@@ -412,10 +431,20 @@ startLevel()
 
 }
 
+document.getElementById("pauseBtn").onclick=()=>{
+
+paused=!paused
+
+document.getElementById("pauseBtn").innerText=paused?"Resume":"Pause"
+
+}
+
 let joystick=document.getElementById("joystick")
 let stick=document.getElementById("stick")
 
 joystick.addEventListener("touchmove",e=>{
+
+if(paused) return
 
 let rect=joystick.getBoundingClientRect()
 
