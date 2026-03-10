@@ -144,9 +144,11 @@ Time: <span id="time">30</span>
 
 <p>
 Move with joystick or arrow keys.<br><br>
-Tap 👅 or press SPACE to catch bugs.<br><br>
-Catch all bugs before time runs out.<br><br>
-Boss flies appear every 3 levels.
+Tap 👅 or press SPACE to catch flies.<br><br>
+Catch all flies before time runs out.<br><br>
+Boss flies appear every 3 levels.<br><br>
+Boss flies are EXTREMELY FAST.<br><br>
+Boss flies disappear after 7 seconds if not caught.
 </p>
 
 <button id="startBtn">Start Game</button>
@@ -208,7 +210,8 @@ y:Math.random()*400,
 vx:(Math.random()-0.5)*18,
 vy:(Math.random()-0.5)*18,
 size:34,
-boss:true
+boss:true,
+spawnTime:Date.now()
 })
 
 }
@@ -238,10 +241,10 @@ let m=document.getElementById("levelMessage")
 m.innerText=text
 m.style.display="block"
 
-setTimeout(()=>{
-m.style.display="none"
-},2000)
+}
 
+function hideMessage(){
+document.getElementById("levelMessage").style.display="none"
 }
 
 function drawFrog(){
@@ -252,7 +255,6 @@ ctx.beginPath()
 ctx.arc(frog.x,frog.y,frog.size,0,Math.PI*2)
 ctx.fill()
 
-// eyes
 ctx.fillStyle="white"
 
 ctx.beginPath()
@@ -260,7 +262,6 @@ ctx.arc(frog.x-10,frog.y-20,8,0,Math.PI*2)
 ctx.arc(frog.x+10,frog.y-20,8,0,Math.PI*2)
 ctx.fill()
 
-// pupils
 ctx.fillStyle="black"
 
 ctx.beginPath()
@@ -268,7 +269,6 @@ ctx.arc(frog.x-10,frog.y-20,3,0,Math.PI*2)
 ctx.arc(frog.x+10,frog.y-20,3,0,Math.PI*2)
 ctx.fill()
 
-// legs
 ctx.strokeStyle="#145c2e"
 ctx.lineWidth=6
 
@@ -296,23 +296,49 @@ ctx.stroke()
 
 function drawBug(b){
 
+let age=(Date.now()-b.spawnTime)/1000
+
+if(b.boss){
+
+if(age>7){
+bugs.splice(bugs.indexOf(b),1)
+return
+}
+
+if(age>4){
+ctx.globalAlpha=Math.sin(Date.now()*0.01)*0.5+0.5
+}
+
+}
+
 ctx.fillStyle=b.boss?"darkred":"black"
 
 ctx.beginPath()
 ctx.arc(b.x,b.y,b.size,0,Math.PI*2)
 ctx.fill()
 
-// wings
 ctx.strokeStyle="white"
-ctx.lineWidth=2
+ctx.lineWidth=b.boss?4:2
 
 ctx.beginPath()
-ctx.moveTo(b.x-5,b.y-5)
-ctx.lineTo(b.x-12,b.y-12)
 
-ctx.moveTo(b.x+5,b.y-5)
-ctx.lineTo(b.x+12,b.y-12)
+ctx.moveTo(b.x-6,b.y-6)
+ctx.lineTo(b.x-16,b.y-16)
+
+ctx.moveTo(b.x+6,b.y-6)
+ctx.lineTo(b.x+16,b.y-16)
+
+if(b.boss){
+ctx.moveTo(b.x-10,b.y)
+ctx.lineTo(b.x-26,b.y-10)
+
+ctx.moveTo(b.x+10,b.y)
+ctx.lineTo(b.x+26,b.y-10)
+}
+
 ctx.stroke()
+
+ctx.globalAlpha=1
 
 }
 
@@ -382,7 +408,9 @@ levelTransition=true
 if(level===20){
 
 celebration=true
-showMessage("YOU WIN!")
+showMessage("YOU WIN! TAP TO PLAY AGAIN")
+
+canvas.onclick=()=>location.reload()
 
 return
 
@@ -393,6 +421,7 @@ level++
 showMessage("Get Ready For Level "+level)
 
 setTimeout(()=>{
+hideMessage()
 startLevel()
 },2000)
 
@@ -450,11 +479,11 @@ document.getElementById("time").innerText=timeLeft
 
 if(timeLeft<=0){
 
-alert("Game Over!")
+showMessage("GAME OVER - TAP TO START AGAIN")
 
-level=1
-score=0
-startLevel()
+gameRunning=false
+
+canvas.onclick=()=>location.reload()
 
 }
 
@@ -472,13 +501,11 @@ startLevel()
 document.getElementById("pauseBtn").onclick=()=>{
 
 paused=!paused
-
 document.getElementById("pauseBtn").innerText=paused?"Resume":"Pause"
 
 }
 
 let joystick=document.getElementById("joystick")
-let stick=document.getElementById("stick")
 
 joystick.addEventListener("touchmove",e=>{
 
