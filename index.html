@@ -18,9 +18,7 @@ touch-action:none;
 overflow:hidden;
 }
 
-h1{
-margin-top:10px;
-}
+h1{margin-top:10px;}
 
 #gameContainer{
 position:relative;
@@ -53,6 +51,15 @@ background:#222;
 color:white;
 border:none;
 border-radius:6px;
+}
+
+#levelMessage{
+position:absolute;
+top:40%;
+width:100%;
+font-size:32px;
+font-weight:bold;
+display:none;
 }
 
 #startScreen{
@@ -130,6 +137,8 @@ Time: <span id="time">30</span>
 
 <button id="pauseBtn">Pause</button>
 
+<div id="levelMessage"></div>
+
 <canvas id="game" width="700" height="450"></canvas>
 
 <div id="startScreen">
@@ -141,7 +150,7 @@ Move with joystick or keyboard arrows.<br><br>
 Tap 👅 or press SPACE to shoot tongue.<br><br>
 Catch all bugs before time runs out.<br><br>
 Boss bugs appear every 3 levels.<br><br>
-Boss flies are VERY FAST.
+Boss flies are EXTREMELY FAST.
 </p>
 
 <button id="startBtn">Start Game</button>
@@ -171,6 +180,7 @@ tongueMax:140,
 tongueActive:false
 }
 
+let celebration=false
 let bugs=[]
 let keys={}
 let score=0
@@ -199,9 +209,9 @@ function spawnBoss(){
 bugs.push({
 x:Math.random()*650,
 y:Math.random()*400,
-vx:(Math.random()-0.5)*7,
-vy:(Math.random()-0.5)*7,
-size:32,
+vx:(Math.random()-0.5)*14,
+vy:(Math.random()-0.5)*14,
+size:34,
 boss:true
 })
 
@@ -220,6 +230,19 @@ if(level%3==0) spawnBoss()
 timeLeft=30
 
 document.getElementById("level").innerText=level
+
+}
+
+function showLevelMessage(text){
+
+let msg=document.getElementById("levelMessage")
+
+msg.innerText=text
+msg.style.display="block"
+
+setTimeout(()=>{
+msg.style.display="none"
+},2000)
 
 }
 
@@ -284,7 +307,6 @@ ctx.lineWidth=b.boss?4:2
 ctx.beginPath()
 ctx.moveTo(b.x-6,b.y-6)
 ctx.lineTo(b.x-16,b.y-16)
-
 ctx.moveTo(b.x+6,b.y-6)
 ctx.lineTo(b.x+16,b.y-16)
 ctx.stroke()
@@ -294,6 +316,17 @@ ctx.stroke()
 function update(){
 
 if(!gameRunning || paused) return
+
+if(celebration){
+
+frog.x+=Math.random()*20-10
+frog.y+=Math.random()*20-10
+
+frog.x=Math.max(25,Math.min(canvas.width-25,frog.x))
+frog.y=Math.max(25,Math.min(canvas.height-25,frog.y))
+
+return
+}
 
 if(keys["ArrowUp"]) frog.y-=frog.speed
 if(keys["ArrowDown"]) frog.y+=frog.speed
@@ -342,18 +375,22 @@ frog.tongueActive=false
 
 if(bugs.length==0){
 
-level++
+if(level==20){
 
-if(level>20){
+celebration=true
+showLevelMessage("YOU WIN!")
 
-alert("You beat the game!")
-
-level=1
-score=0
+return
 
 }
 
+level++
+
+showLevelMessage("Get Ready For Level "+level)
+
+setTimeout(()=>{
 startLevel()
+},2000)
 
 }
 
@@ -402,7 +439,7 @@ document.getElementById("tongueBtn").onclick=shootTongue
 
 setInterval(()=>{
 
-if(!gameRunning || paused) return
+if(!gameRunning || paused || celebration) return
 
 timeLeft--
 
