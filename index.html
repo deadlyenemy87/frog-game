@@ -123,11 +123,11 @@ Time: <span id="time">30</span>
 <h2>How To Play</h2>
 
 <p>
-Move the frog using the joystick or keyboard arrows.<br><br>
-Tap 👅 or press SPACE to shoot the tongue.<br><br>
+Move with joystick or keyboard arrows.<br><br>
+Tap 👅 or press SPACE to shoot tongue.<br><br>
 Catch all bugs before time runs out.<br><br>
 Boss bugs appear every 3 levels.<br><br>
-Levels 16-20 are extremely fast.
+Levels 16-20 are extremely fast!
 </p>
 
 <button id="startBtn">Start Game</button>
@@ -151,6 +151,7 @@ let frog={
 x:350,
 y:225,
 size:25,
+speed:5,
 tongueLength:0,
 tongueMax:120,
 tongueActive:false
@@ -215,7 +216,6 @@ ctx.beginPath()
 ctx.arc(frog.x,frog.y,frog.size,0,Math.PI*2)
 ctx.fill()
 
-// legs
 ctx.strokeStyle="#145c2e"
 ctx.lineWidth=6
 
@@ -227,7 +227,6 @@ ctx.moveTo(frog.x+20,frog.y+10)
 ctx.lineTo(frog.x+35,frog.y+25)
 ctx.stroke()
 
-// eyes
 ctx.fillStyle="white"
 
 ctx.beginPath()
@@ -242,7 +241,6 @@ ctx.arc(frog.x-10,frog.y-20,3,0,Math.PI*2)
 ctx.arc(frog.x+10,frog.y-20,3,0,Math.PI*2)
 ctx.fill()
 
-// tongue
 if(frog.tongueActive){
 
 ctx.strokeStyle="red"
@@ -265,7 +263,6 @@ ctx.beginPath()
 ctx.arc(b.x,b.y,b.size,0,Math.PI*2)
 ctx.fill()
 
-// wings
 ctx.strokeStyle="white"
 
 ctx.beginPath()
@@ -274,7 +271,6 @@ ctx.lineTo(b.x-14,b.y-14)
 
 ctx.moveTo(b.x+6,b.y-6)
 ctx.lineTo(b.x+14,b.y-14)
-
 ctx.stroke()
 
 }
@@ -283,10 +279,10 @@ function update(){
 
 if(!gameRunning) return
 
-if(keys["ArrowUp"]) frog.y-=4
-if(keys["ArrowDown"]) frog.y+=4
-if(keys["ArrowLeft"]) frog.x-=4
-if(keys["ArrowRight"]) frog.x+=4
+if(keys["ArrowUp"]) frog.y-=frog.speed
+if(keys["ArrowDown"]) frog.y+=frog.speed
+if(keys["ArrowLeft"]) frog.x-=frog.speed
+if(keys["ArrowRight"]) frog.x+=frog.speed
 
 bugs.forEach(b=>{
 
@@ -298,7 +294,6 @@ if(b.y<0||b.y>450) b.vy*=-1
 
 })
 
-// tongue mechanics
 if(frog.tongueActive){
 
 frog.tongueLength+=12
@@ -368,7 +363,6 @@ loop()
 
 document.addEventListener("keydown",e=>{
 keys[e.key]=true
-
 if(e.code==="Space") shootTongue()
 })
 
@@ -418,8 +412,6 @@ startLevel()
 
 }
 
-// joystick control
-
 let joystick=document.getElementById("joystick")
 let stick=document.getElementById("stick")
 
@@ -430,11 +422,18 @@ let rect=joystick.getBoundingClientRect()
 let x=e.touches[0].clientX-rect.left-60
 let y=e.touches[0].clientY-rect.top-60
 
+let dist=Math.sqrt(x*x+y*y)
+
+if(dist>50){
+x*=50/dist
+y*=50/dist
+}
+
 stick.style.left=(x+35)+"px"
 stick.style.top=(y+35)+"px"
 
-frog.x+=x*0.03
-frog.y+=y*0.03
+frog.x+=x*0.15
+frog.y+=y*0.15
 
 })
 
